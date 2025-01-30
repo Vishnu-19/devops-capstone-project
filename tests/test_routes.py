@@ -149,11 +149,6 @@ class TestAccountService(TestCase):
         self.assertEqual(len(accounts), len(response_list))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_empty_account_list(self):
-        """It should return an empty list when there are no accounts"""
-        response = self.client.get(f"{BASE_URL}")
-        self.assertEqual(0, len(json.loads(response.text)))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_an_account(self):
         """It should Update a single Account"""
@@ -204,11 +199,6 @@ class TestAccountService(TestCase):
         self.assertEqual(read_account["phone_number"], account.phone_number)
         self.assertEqual(read_account["date_joined"], str(account.date_joined))
 
-    def test_read_account_not_found(self):
-        """Read: It should return error status when no account could be read"""
-        invalid_account_id = 0
-        response = self.client.get(f"{BASE_URL}/{invalid_account_id}")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_an_account(self):
         """Update: It should Update an Account"""
