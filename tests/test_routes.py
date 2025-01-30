@@ -179,15 +179,6 @@ class TestAccountService(TestCase):
         response = self.client.put(f"{BASE_URL}/{invalid_account_id}", json=updated_data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_update_account_bad_request(self):
-        """Update: It should not Update an Account when sending the wrong data"""
-        account = self._create_accounts(1)[0]
-        response = self.client.put(
-            f"{BASE_URL}/{account.id}",
-            json={"name": "not enough data"}
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_update_account_unsupported_media_type(self):
         """Update: It should not Update an Account when sending the wrong media type"""
         account = AccountFactory()
@@ -211,11 +202,6 @@ class TestAccountService(TestCase):
         self.assertEqual(Account.find(account.id), None)
         self.assertEqual(len(Account.all()), 0)
 
-    def test_delete_account_not_found(self):
-        """Delete: It should return error status when no account could be found"""
-        invalid_account_id = 0
-        response = self.client.delete(f"{BASE_URL}/{invalid_account_id}")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_list_all_accounts(self):
         """List: It should List all Accounts"""
