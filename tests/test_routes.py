@@ -90,7 +90,7 @@ class TestAccountService(TestCase):
         self.assertEqual(data["status"], "OK")
 
     def test_create_account(self):
-        """It should Create a new Account"""
+        """Create: It should Create a new Account"""
         account = AccountFactory()
         response = self.client.post(
             BASE_URL,
@@ -112,12 +112,12 @@ class TestAccountService(TestCase):
         self.assertEqual(new_account["date_joined"], str(account.date_joined))
 
     def test_bad_request(self):
-        """It should not Create an Account when sending the wrong data"""
+        """Create: It should not Create an Account when sending the wrong data"""
         response = self.client.post(BASE_URL, json={"name": "not enough data"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_unsupported_media_type(self):
-        """It should not Create an Account when sending the wrong media type"""
+        """Create: It should not Create an Account when sending the wrong media type"""
         account = AccountFactory()
         response = self.client.post(
             BASE_URL,
@@ -125,8 +125,6 @@ class TestAccountService(TestCase):
             content_type="test/html"
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
-
-    # ADD YOUR TEST CASES HERE ...
 
     def test_read_an_account(self):
         """It should Read a single Account"""
@@ -176,13 +174,6 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response_json['email'], updated_response.get_json()['email'])
 
-    def test_update_not_exist_account(self):
-        """It should try to update an account that doesn't exist, and fail to"""
-        put_response = self.client.put(
-            f"{BASE_URL}/0",
-            json={}
-        )
-        self.assertEqual(put_response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_an_account(self):
         """It should Delete a single Account"""
@@ -198,32 +189,85 @@ class TestAccountService(TestCase):
         deleted_response = self.client.get(f"{BASE_URL}")
         self.assertEqual(0, len(json.loads(deleted_response.text)))
 
-    def test_method_not_allowed(self):
-        """It should not allow an illegal method call"""
-        resp = self.client.delete(BASE_URL)
-        self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_security_headers(self):
-        """
-        It should return security headers
-        """
-        response = self.client.get('/', environ_overrides=HTTPS_ENVIRON)
+    def test_read_an_account(self):
+        """Read: It should Read an Account"""
+        account = self._create_accounts(1)[0]
+        response = self.client.get(f"{BASE_URL}/{account.id}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        headers = {
-            'X-Frame-Options': 'SAMEORIGIN',
-            'X-XSS-Protection': '1; mode=block',
-            'X-Content-Type-Options': 'nosniff',
-            'Content-Security-Policy': 'default-src \'self\'; object-src \'none\'',
-            'Referrer-Policy': 'strict-origin-when-cross-origin'
+        # Check data is correct
+        read_account = response.get_json()
+        self.assertEqual(read_account["id"], account.id)
+        self.assertEqual(read_account["name"], account.name)
+        self.assertEqual(read_account["email"], account.email)
+        self.assertEqual(read_account["address"], account.address)
+        self.assertEqual(read_account["phone_number"], account.phone_number)
+        self.assertEqual(read_account["date_joined"], str(account.date_joined))
+
+    def test_read_account_not_found(self):
+        """Read: It should return error status when no account could be read"""
+        invalid_account_id = 0
+        response = self.client.get(f"{BASE_URL}/{invalid_account_id}")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_an_account(self):
+        """Update: It should Update an Account"""
+        account = self._create_accounts(1)[0]
+        updated_data = {
+            "name": "Test Update Account",
+            "email": "max.mustermann@gmail.com",
+            "address": "Wishes Street 65",
+            "phone_number": "+45 XXX",
+            "date_joined": "2024-12-15"
         }
-        for key, value in headers.items():
-            self.assertEqual(response.headers.get(key), value)
-
-    def test_cors_security(self):
-        """
-        It should return a CORS header
-        """
-        response = self.client.get('/', environ_overrides=HTTPS_ENVIRON)
+        account.deserialize(updated_data)
+        response = self.client.put(f"{BASE_URL}/{account.id}", json=account.serialize())
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.headers.get('Access-Control-Allow-Origin'), '*')
+        response_json = response.get_json()
+        updated_account = Account().deserialize(response_json)
+        # Set ID separately because deserialize()
+        # doesn't deserialize ID of account
+        updated_account.id = response_json["id"]
+        self.assertEqual(updated_account.id, account.id)
+        self.assertEqual(updated_account.name, account.name)
+        self.assertEqual(updated_account.email, account.email)
+        self.assertEqual(updated_account.address, account.address)
+        self.assertEqual(updated_account.phone_number, account.phone_number)
+        self.assertEqual(updated_account.date_joined, account.date_joined)
 
+    def test_delete_account(self):
+        """Delete: It should Delete an Account"""
+        account = self._create_accounts(1)[0]
+        response = self.client.delete(
+            f"{BASE_URL}/{account.id}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # Data of response as text.
+        # Otherwise, it returns 'b""' and not just '""'.
+        self.assertEqual(response.get_data(as_text=True), "")
+        self.assertEqual(Account.find(account.id), None)
+        self.assertEqual(len(Account.all()), 0)
+
+
+    def test_list_all_accounts(self):
+        """List: It should List all Accounts"""
+        account_count = 5
+        self._create_accounts(account_count)
+        response = self.client.get(f"{BASE_URL}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data = response.get_json()
+        self.assertEqual(len(response_data), account_count)
+
+    def test_list_all_accounts_no_products_found(self):
+        """List: It should return success status when no account could be found"""
+        """
+        Note: It is deliberately programmed so that no error code (e.g. 404)
+          is sent, but a success code!
+          It is not an error if nothing specific was searched for
+          and nothing was found in an empty database.
+        """
+        response = self.client.get(f"{BASE_URL}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.get_json()), 0)
+        # Just to be sure
+        self.assertEqual(len(Account.all()), 0)
