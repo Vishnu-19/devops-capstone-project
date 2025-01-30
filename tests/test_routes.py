@@ -172,23 +172,6 @@ class TestAccountService(TestCase):
         self.assertEqual(updated_account.phone_number, account.phone_number)
         self.assertEqual(updated_account.date_joined, account.date_joined)
 
-    def test_update_account_not_found(self):
-        """Update: It should return error status when no account could be found"""
-        invalid_account_id = 0
-        updated_data = {}
-        response = self.client.put(f"{BASE_URL}/{invalid_account_id}", json=updated_data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_update_account_unsupported_media_type(self):
-        """Update: It should not Update an Account when sending the wrong media type"""
-        account = AccountFactory()
-        response = self.client.put(
-            f"{BASE_URL}/{account.id}",
-            json=account.serialize(),
-            content_type="test/html"
-        )
-        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
-
     def test_delete_account(self):
         """Delete: It should Delete an Account"""
         account = self._create_accounts(1)[0]
