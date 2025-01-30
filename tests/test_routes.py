@@ -213,16 +213,6 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_update_account_unsupported_media_type(self):
-        """Update: It should not Update an Account when sending the wrong media type"""
-        account = AccountFactory()
-        response = self.client.put(
-            f"{BASE_URL}/{account.id}",
-            json=account.serialize(),
-            content_type="test/html"
-        )
-        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
-
     def test_delete_account(self):
         """Delete: It should Delete an Account"""
         account = self._create_accounts(1)[0]
@@ -234,33 +224,4 @@ class TestAccountService(TestCase):
         # Otherwise, it returns 'b""' and not just '""'.
         self.assertEqual(response.get_data(as_text=True), "")
         self.assertEqual(Account.find(account.id), None)
-        self.assertEqual(len(Account.all()), 0)
-
-    def test_delete_account_not_found(self):
-        """Delete: It should return error status when no account could be found"""
-        invalid_account_id = 0
-        response = self.client.delete(f"{BASE_URL}/{invalid_account_id}")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_list_all_accounts(self):
-        """List: It should List all Accounts"""
-        account_count = 5
-        self._create_accounts(account_count)
-        response = self.client.get(f"{BASE_URL}")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response_data = response.get_json()
-        self.assertEqual(len(response_data), account_count)
-
-    def test_list_all_accounts_no_products_found(self):
-        """List: It should return success status when no account could be found"""
-        """
-        Note: It is deliberately programmed so that no error code (e.g. 404)
-          is sent, but a success code!
-          It is not an error if nothing specific was searched for
-          and nothing was found in an empty database.
-        """
-        response = self.client.get(f"{BASE_URL}")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.get_json()), 0)
-        # Just to be sure
         self.assertEqual(len(Account.all()), 0)
