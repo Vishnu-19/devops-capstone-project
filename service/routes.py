@@ -79,6 +79,7 @@ def list_accounts():
 # READ AN ACCOUNT
 ######################################################################
 
+
 # ... place you code here to READ an account ...
 @app.route("/accounts/<int:account_id>", methods=["GET"])
 def get_accounts(account_id):
@@ -111,7 +112,6 @@ def update_accounts(account_id):
 
     account.deserialize(request.get_json())
     account.update()
-
     return account.serialize(), status.HTTP_200_OK
     
 ######################################################################
