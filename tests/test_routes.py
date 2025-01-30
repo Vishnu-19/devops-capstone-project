@@ -225,4 +225,3 @@ class TestAccountService(TestCase):
         self.assertEqual(response.get_data(as_text=True), "")
         self.assertEqual(Account.find(account.id), None)
         self.assertEqual(len(Account.all()), 0)
-
